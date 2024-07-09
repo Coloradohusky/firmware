@@ -106,6 +106,9 @@ void NeighborInfoModule::sendNeighborInfo(NodeNum dest, bool wantReplies)
     // because we want to get neighbors for the next cycle
     p->to = dest;
     p->decoded.want_response = wantReplies;
+    if (channels.hasDefaultChannel()) {
+        p->channel = channels.getDefaultChannel();
+    }
     printNeighborInfo("SENDING", &neighborInfo);
     service.sendToMesh(p, RX_SRC_LOCAL, true);
 }

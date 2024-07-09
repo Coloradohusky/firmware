@@ -85,6 +85,8 @@ class Channels
 
     // Returns true if we can be reached via a channel with the default settings given a region and modem preset
     bool hasDefaultChannel();
+    
+    int getDefaultChannel();
 
     // Returns true if any of our channels have enabled MQTT uplink or downlink
     bool anyMqttEnabled();
