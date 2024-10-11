@@ -309,7 +309,7 @@ class Screen : public concurrency::OSThread
     static char customFontTableLookup(const uint8_t ch)
     {
         // UTF-8 to font table index converter
-        // Code form http://playground.arduino.cc/Main/Utf8ascii
+        // Code from http://playground.arduino.cc/Main/Utf8ascii
         static uint8_t LASTCHAR;
         static bool SKIPREST; // Only display a single unconvertable-character symbol per sequence of unconvertable characters
 
@@ -322,13 +322,20 @@ class Screen : public concurrency::OSThread
         uint8_t last = LASTCHAR; // get last char
         LASTCHAR = ch;
 
-#if defined(OLED_PL)
-
-        switch (last) { // conversion depending on first UTF8-character
+        switch (last) {
         case 0xC2: {
             SKIPREST = false;
             return (uint8_t)ch;
         }
+        }
+
+        // We want to strip out prefix chars for two-byte char formats
+        if (ch == 0xC2)
+            return (uint8_t)0;
+
+#if defined(OLED_PL)
+
+        switch (last) {
         case 0xC3: {
 
             if (ch == 147)
@@ -365,11 +372,7 @@ class Screen : public concurrency::OSThread
 
 #if defined(OLED_UA) || defined(OLED_RU)
 
-        switch (last) { // conversion depending on first UTF8-character
-        case 0xC2: {
-            SKIPREST = false;
-            return (uint8_t)ch;
-        }
+        switch (last) {
         case 0xC3: {
             SKIPREST = false;
             return (uint8_t)(ch | 0xC0);
@@ -451,6 +454,9 @@ class Screen : public concurrency::OSThread
 
     void setWelcomeFrames();
 
+    // Dismiss the currently focussed frame, if possible (e.g. text message, waypoint)
+    void dismissCurrentFrame();
+
 #ifdef USE_EINK
     /// Draw an image to remain on E-Ink display after screen off
     void setScreensaverFrames(FrameCallback einkScreensaver = NULL);
@@ -500,11 +506,14 @@ class Screen : public concurrency::OSThread
     void handleStartFirmwareUpdateScreen();
 
     // Info collected by setFrames method.
-    // Index location of specific frames. Used to apply the FrameFocus parameter of setFrames
+    // Index location of specific frames.
+    // - Used to apply the FrameFocus parameter of setFrames
+    // - Used to dismiss the currently shown frame (txt; waypoint) by CardKB combo
     struct FramesetInfo {
         struct FramePositions {
             uint8_t fault = 0;
             uint8_t textMessage = 0;
+            uint8_t waypoint = 0;
             uint8_t focusedModule = 0;
             uint8_t log = 0;
             uint8_t settings = 0;
